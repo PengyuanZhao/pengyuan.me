@@ -28,12 +28,17 @@ const getGithubAction = type => {
     case 'WatchEvent':
       return {
         name: 'Starred',
-        color: 'primary',
+        color: 'gray',
+      };
+    case 'CreateEvent':
+      return {
+        name: 'Created',
+        color: 'success'
       };
     case 'PushEvent':
       return {
         name: 'Pushed',
-        color: 'success',
+        color: 'primary',
       };
     case 'IssueCommentEvent':
       return {
@@ -65,8 +70,6 @@ class ActivityList extends Component {
 
   async fetchGithub() {
     const { data } = await axios.get('https://api.github.com/users/pengyuanzhao/events');
-    console.log(data);
-
     const githubActivities = data.map(activity => ({
       id: activity.id,
       name: activity.repo.name,
@@ -82,16 +85,38 @@ class ActivityList extends Component {
     const { data } = await axios.get(
       'https://api.stackexchange.com/2.2/users/5797119/favorites?site=stackoverflow&order=desc'
     );
+    console.log(data)
     const stackoverflowActivities = data.items.map(activity => ({
       id: activity.question_id,
       name: activity.title,
       url: activity.link,
-      createdAt: activity.creation_date * 1000,
-      action: { name: 'Favorited', color: 'primary' },
-      icon: <FaStackOverflow />,
+      createdAt: null,
+      action: { name: 'Favorited', color: 'gray' },
+      icon: <FaStackOverflow color="#f48024" />,
     }));
     this.setState({ stackoverflowActivities });
   }
+
+  renderActivity = (activity) => (
+    <li key={activity.id}>
+      <span>{activity.icon}</span>
+      <span>
+        <Tag type={activity.action.color}>{activity.action.name}</Tag>
+      </span>
+      <span>
+        <a href={activity.url} target="_blank">
+          {activity.name}
+        </a>
+      </span>
+      {activity.createdAt && (
+        <time dateTime={activity.createdAt}>
+          {distanceInWordsStrict(Date.now(), new Date(activity.createdAt), {
+            addSuffix: true,
+          })}
+        </time>
+      )}
+    </li>
+  )
 
   render() {
     const { githubActivities, stackoverflowActivities } = this.state;
@@ -99,48 +124,10 @@ class ActivityList extends Component {
       <Wrapper>
         <Tabs activeName="1">
           <Tabs.Pane label="Github" name="1">
-            <ul>
-              {githubActivities.map(activity => (
-                <li key={activity.id}>
-                  <span>{activity.icon}</span>
-                  <span>
-                    <Tag type={activity.action.color}>{activity.action.name}</Tag>
-                  </span>
-                  <span>
-                    <a href={activity.url} target="_blank">
-                      {activity.name}
-                    </a>
-                  </span>
-                  <time dateTime={activity.createdAt}>
-                    {distanceInWordsStrict(Date.now(), new Date(activity.createdAt), {
-                      addSuffix: true,
-                    })}
-                  </time>
-                </li>
-              ))}
-            </ul>
+            <ul>{githubActivities.map(this.renderActivity)}</ul>
           </Tabs.Pane>
           <Tabs.Pane label="Stack Overflow" name="2">
-            <ul>
-              {stackoverflowActivities.map(activity => (
-                <li key={activity.id}>
-                  <span>{activity.icon}</span>
-                  <span>
-                    <Tag type={activity.action.color}>{activity.action.name}</Tag>
-                  </span>
-                  <span>
-                    <a href={activity.url} target="_blank">
-                      {activity.name}
-                    </a>
-                  </span>
-                  <time dateTime={activity.createdAt}>
-                    {distanceInWordsStrict(Date.now(), new Date(activity.createdAt), {
-                      addSuffix: true,
-                    })}
-                  </time>
-                </li>
-              ))}
-            </ul>
+            <ul>{stackoverflowActivities.map(this.renderActivity)}</ul>
           </Tabs.Pane>
         </Tabs>
       </Wrapper>
